@@ -14,7 +14,7 @@ The main components of the project are spread across several Python files:
 
 - `router.py`: This module projects a computed path from a simplified grid back to the original high-resolution map. It includes functions that aid in handling partial obstacle coverage, avoiding collisions, and converting diagonal lines to orthogonal paths, ensuring smooth and safe navigation for the AGV.
 
-- `utilities.py`: This file holds various utility functions used across the project. These functions handle file operations, data conversions, and other common tasks that don't specifically belong to the other modules.
+- `utilities.py`: This file holds various utility functions used across the project.
 
 - `plot_utils.py`: This module is used for visualization purposes. It provides functions to plot the environment map, the planned path for the AGV, and the actual path taken, which can be useful for debugging and understanding the AGV's movements.
 
