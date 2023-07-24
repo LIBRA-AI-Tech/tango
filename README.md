@@ -1,4 +1,4 @@
-# Tango: An AGV Path Planning and Area Coverage Project
+# Tango: Coverage Path Planning for Autonomous Ground Robots
 
 ## Overview
 
