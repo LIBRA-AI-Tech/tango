@@ -4,6 +4,19 @@ from cpp_solver.utilities import find_central_point
 from cpp_solver.map import Parser
 
 def get_dilated_padded_grid(map_parser: Parser) -> np.ndarray:
+    """
+    Expand the area of the dilated map according to the chosen cell dimension of the grid.
+
+    Parameters
+    ----------
+    map_parser : Parser
+        The parser used to process the map.
+
+    Returns
+    -------
+    np.ndarray
+        The dilated and padded grid as a numpy array.
+    """
     grid_dilated = map_parser.grid_dilated
     grid_dilated_pad = map_parser._grid_dilated
     cell_dim = map_parser._cell_dim
@@ -16,19 +29,35 @@ def get_dilated_padded_grid(map_parser: Parser) -> np.ndarray:
     return grid_dilated_padded
 
 def rescale_path(map_parser: Parser, path: List[Tuple]) -> List[Tuple]:
-    
+    """
+    Project the path from the low-dimensional grid to the original map dimensions. 
+    Partially covered grid cells are handled to avoid collisions.
+
+    Parameters
+    ----------
+    map_parser : Parser
+        The parser used to process the map.
+    path : List[Tuple]
+        The path to be rescaled.
+
+    Returns
+    -------
+    List[Tuple]
+        The rescaled path.
+    """
     cell_dim = map_parser._cell_dim
     grid_dilated_padded = get_dilated_padded_grid(map_parser)
+    cells = map_parser.split_to_cells(grid_dilated_padded)
     
     rescaled_path = []
     for p1, p2 in path:
         
-        cell1 = map_parser.split_to_cells(grid_dilated_padded)[p1[1],p1[0]]
+        cell1 = cells[p1[1],p1[0]]
         dy1, dx1 = find_central_point(cell1)
         nx1 = int(p1[0]*cell_dim + dx1)
         ny1 = int(p1[1]*cell_dim + dy1) 
         
-        cell2 = map_parser.split_to_cells(grid_dilated_padded)[p2[1],p2[0]]
+        cell2 = cells[p2[1],p2[0]]
         dy2, dx2 = find_central_point(cell2)
         nx2 = int(p2[0]*cell_dim + dx2)
         ny2 = int(p2[1]*cell_dim + dy2)
@@ -38,6 +67,24 @@ def rescale_path(map_parser: Parser, path: List[Tuple]) -> List[Tuple]:
     return rescaled_path
 
 def orthogonalize_path_line(img_map: np.ndarray, start: Tuple[int, int], end: Tuple[int, int]) -> Tuple[Tuple, Tuple]:
+    """
+    Reconstructs a given path line to bypass obstacles orthogonally when possible.
+
+    Parameters
+    ----------
+    img_map : np.ndarray
+        The 2D numpy array representing the image of the map.
+    start : Tuple[int, int]
+        The starting point of the path line.
+    end : Tuple[int, int]
+        The ending point of the path line.
+
+    Returns
+    -------
+    Tuple[Tuple, Tuple]
+        The orthogonalized path as two separate lines, each defined by a start and end point.
+    """
+
     (xs,ys), (xe,ye) = start, end
 
     if img_map[int(ys),int(xe)] != 1:
@@ -51,8 +98,22 @@ def orthogonalize_path_line(img_map: np.ndarray, start: Tuple[int, int], end: Tu
     return (start, mid), (mid, end)
 
 def orthogonalize_path(map_parser: Parser, path: List[Tuple]) -> List[Tuple]:
-    
-    cell_dim = map_parser._cell_dim
+    """
+    Reconstructs the path to avoid obstacles orthogonally when possible.
+
+    Parameters
+    ----------
+    map_parser : Parser
+        The parser used to process the map.
+    path : List[Tuple]
+        The path to be orthogonalized.
+
+    Returns
+    -------
+    List[Tuple]
+        The orthogonalized path.
+    """
+        
     grid_dilated_padded = get_dilated_padded_grid(map_parser)
 
     orthogonalized_path = []
@@ -75,7 +136,22 @@ def is_same_sign(num1: int, num2: int) -> int:
     return num1 * num2 > 0
 
 def normalize_path(path: List[Tuple], threshold: float) -> List[Tuple]:
-    # Initialize the normalized path
+    """
+    Normalizes the path by reducing redundant segments and maintaining straight course if possible.
+
+    Parameters
+    ----------
+    path : List[Tuple]
+        The original path to be normalized.
+    threshold : float
+        The threshold distance to consider while normalizing the path.
+
+    Returns
+    -------
+    List[Tuple]
+        The normalized path.
+    """
+
     normalized_path = []
     last_edge = path[0]
     i = 1

@@ -11,6 +11,11 @@ from PIL import Image, ImageOps
 
 @dataclass
 class ImageDefs:
+    """
+    This data class is used to hold the image definitions. It includes image path, resolution,
+    origin point, thresholds for considering pixels as occupied or free, and a flag to negate the image or not.
+    """
+
     image: str
     resolution: float
     origin: list
@@ -35,6 +40,10 @@ class ImageDefs:
     
 @dataclass
 class RobotDefs:
+    """
+    This data class is used to hold the robot definitions. It includes robot and mower dimensions.
+    """
+
     robot_dim: float
     mower_dim: float
 
@@ -48,8 +57,29 @@ class RobotDefs:
         )
 
 class Parser:
+    """
+    This class is used for parsing and processing maps.
+    """
     
     def __init__(self, hard_map: str, soft_map: str, robot_config: str, cell_dim: Optional[int] = None, occupied_cell_threshold: float = 0.5, use_disc: bool = False) -> None:
+        """
+        The initializer for the Parser class.
+
+        Parameters
+        ----------
+        hard_map : str
+            Path to the yaml file that defines the hard obstacles on the map.
+        soft_map : str
+            Path to the yaml file that defines the soft obstacles on the map.
+        robot_config : str
+            Path to the yaml file that defines the robot configuration.
+        cell_dim : Optional[int]
+            The dimension of the cells that the map grid will be split into. If None, it will be calculated based on the robot dimensions and map resolution.
+        occupied_cell_threshold : float
+            Threshold for considering a cell as occupied based on the percentage of occupied pixels in the cell.
+        use_disc : bool
+            Flag to use a disc-shaped structuring element for dilation and erosion instead of a rectangular one.
+        """
 
         self._obs_defs = ImageDefs.from_yaml(hard_map)
         self._soft_defs = ImageDefs.from_yaml(soft_map)
@@ -116,6 +146,20 @@ class Parser:
         return arr>=defs.occupied_thresh
 
     def show(self, reverse: bool = False) -> Image.Image:
+        """
+        Returns the grid as an Image object.
+        
+        Parameters
+        ----------
+        reverse : bool
+            If set to True, it will reverse the colors of the grid.
+
+        Returns
+        -------
+        Image.Image
+            The Image object representing the grid.
+        """
+
         arr = 1.*self.grid
         arr[arr==-1] = 0.5
         arr = ((1 - arr)*255).astype(np.uint8) if reverse else (arr*255).astype(np.uint8)
@@ -123,6 +167,14 @@ class Parser:
         return im
     
     def select(self, polygon: Union[np.ndarray, list]) -> None:
+        """
+        Selects a region of the grid defined by a polygon. 
+
+        Parameters
+        ----------
+        polygon : Union[np.ndarray, list]
+            The vertices of the polygon that defines the region to select. Can be either a list or a numpy array.
+        """
 
         def select_grid(grid, polygon: np.ndarray):      
             xmin, ymin = np.nanmin(polygon, axis=0)
@@ -147,6 +199,14 @@ class Parser:
         self._polygon = polygon
 
     def dilate(self) -> np.ndarray:
+        """
+        Performs a dilation operation on the grid based on the robot's dimension. 
+
+        Returns
+        -------
+        np.ndarray
+            The dilated grid as a numpy array.
+        """
         
         boolean_grid = (self._grid > 0).astype(np.uint8)
         soft = 1*self._read(self._soft_defs)
@@ -168,6 +228,14 @@ class Parser:
         return dilated_grid
     
     def erode(self) -> np.ndarray:
+        """
+        Performs an erosion operation on the grid based on the robot's dimension.
+
+        Returns
+        -------
+        np.ndarray
+            The eroded grid as a numpy array.
+        """
         
         boolean_grid = (self._grid_dilated > 0).astype(np.uint8)
         soft = 1*self._read(self._soft_defs)
@@ -189,6 +257,27 @@ class Parser:
         return eroded_grid
 
     def pad_and_expand(self, selected_grid: np.ndarray, pad_height: int, pad_width: int, pad_grid: Optional[np.ndarray] = None, polygon: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        Expands a selected map area based on the given parameters. 
+
+        Parameters
+        ----------
+        selected_grid : np.ndarray
+            The grid to be expanded.
+        pad_height : int
+            The height to pad the grid.
+        pad_width : int
+            The width to pad the grid.
+        pad_grid : Optional[np.ndarray]
+            If provided, pad_grid will be used to expand the original grid.
+        polygon : Optional[np.ndarray]
+            If pad_grid is provided, this should also be provided. It's used to locate the selected area in the larger pad_grid which contains it.
+
+        Returns
+        -------
+        np.ndarray
+            The expanded grid as a numpy array.
+        """
 
         height, width = selected_grid.shape
   
@@ -216,6 +305,23 @@ class Parser:
         return padded_image
 
     def split_to_cells(self, grid: np.ndarray, grid_pad: Optional[np.ndarray] = None, polygon: Optional[np.ndarray] = None) -> np.ndarray:
+        """
+        Splits a grid into cells of a certain dimension. The grid can be padded before the splitting operation.
+
+        Parameters
+        ----------
+        grid : np.ndarray
+            The grid to be split.
+        grid_pad : Optional[np.ndarray]
+            If provided, it will be used to pad the grid before splitting.
+        polygon : Optional[np.ndarray]
+            If grid_pad is provided, this should also be provided. It's used to select the padding area from grid_pad.
+
+        Returns
+        -------
+        np.ndarray
+            The split grid as a numpy array.
+        """
 
         height, width = grid.shape
         pad_height = self._cell_dim - (height % self._cell_dim) if height % self._cell_dim != 0 else 0
@@ -232,6 +338,14 @@ class Parser:
         return cells
 
     def downscale_grid(self, occupied_cell_threshold: Optional[float] = None) -> None:
+        """
+        Downscales the grid by replacing each cell with a single value that indicates whether it's occupied or not based on a threshold.
+
+        Parameters
+        ----------
+        occupied_cell_threshold : Optional[float]
+            Threshold for considering a cell as occupied based on the percentage of occupied pixels in the cell.
+        """
         
         if occupied_cell_threshold is None:
             occupied_cell_threshold = self._occupied_cell_threshold
