@@ -35,14 +35,16 @@ class CoverageSolver():
     def __init__(self, grid: List[List[float]], output_path: str, template_path: str, position: List[int] = [0, 0], direction: str = 'deast') -> None:
         """Class representing a coverage solver.
 
-        Args:
+        Parameters
+        ----------
             grid (List[List[float]]): The grid representing the coverage area.
             output_path (str): The path to the output directory.
             template_path (str): The path to the Jinja template directory.
             position (List[int], optional): The starting position of the robot on the grid. Defaults to [0, 0].
             direction (str, optional): The initial direction of the robot. Must be one of ['deast', 'dwest', 'dsouth', 'dnorth']. Defaults to 'deast'.
 
-        Raises:
+        Raises
+        ------
             ValueError: If the `direction` parameter is not recognized.
         """
         if direction not in ['deast', 'dwest', 'dsouth', 'dnorth']:
@@ -67,7 +69,8 @@ class CoverageSolver():
         """
         Returns information about the coverage solver.
 
-        Returns:
+        Returns
+        -------
             Dict[str, Union[str, int]]: A dictionary containing the length of the path, coverage percentage, total length, and number of turns.
         """
         total_length = self._grid.size - np.count_nonzero(self._grid)
@@ -78,7 +81,8 @@ class CoverageSolver():
         """
         Property representing the grid.
 
-        Returns:
+        Returns
+        -------
             np.ndarray: The grid.
         """
         if len(self._boundary) == 0:
@@ -91,7 +95,8 @@ class CoverageSolver():
         """
         Property representing the current direction.
 
-        Returns:
+        Returns
+        -------
             str: The current direction.
         """
         direction = self._direction[-1]
@@ -101,10 +106,12 @@ class CoverageSolver():
         """
         Checks if all cells within the given boundaries have been visited.
 
-        Args:
+        Parameters
+        ----------
             boundaries (List[int]): The boundaries to check.
 
-        Returns:
+        Returns
+        -------
             bool: True if all cells have been visited, False otherwise.
         """
         grid = self.grid
@@ -126,7 +133,8 @@ class CoverageSolver():
         """
         Generates a grid where visited and cells with obstacles are marked as True.
 
-        Returns:
+        Returns
+        -------
             np.ndarray: The occupied grid.
         """
         grid = self.grid
@@ -174,10 +182,12 @@ class CoverageSolver():
         """
         Advances the coverage solver by generating a subgrid and solving the corresponding problem.
 
-        Args:
+        Parameters
+        ----------
             subgrid_dim (int, optional): The dimension of the subgrid. Defaults to 5.
 
-        Returns:
+        Returns
+        -------
             Tuple[Union[np.array, bool]]: A tuple containing the path and a flag indicating whether the coverage should continue.
         """
         if offsets is not None:
@@ -224,10 +234,12 @@ class CoverageSolver():
         the covered area, the position of the obstacles and the relative to
         the current position direction of the nearest uncovered area.
 
-        Args:
+        Parameters
+        ----------
             subgrid_dim (int, optional): The dimension of the subgrid. Defaults to 5.
 
-        Returns:
+        Returns
+        -------
             Tuple[List[int], np.ndarray]: A tuple containing the boundaries of the selected partition and the created subgrid.
         """
         grid = self.grid
@@ -296,12 +308,14 @@ class CoverageSolver():
     def _generate_subgrid(self, boundary: List[int], x0: int, y0: int) -> np.ndarray:
         """Generates a subgrid based on the given boundary and current position.
 
-        Args:
+        Parameters
+        ----------
             boundary (List[int]): The boundary of the subgrid
             x0 (int): The current x-coordinate.
             y0 (int): The current y-coordinate.
 
-        Returns:
+        Returns
+        -------
             np.ndarray: The generated subgrid.
         """
         grid = self._grid
@@ -316,7 +330,8 @@ class CoverageSolver():
     def _locate_closest_free(self) -> Tuple[int]:
         """Finds the closest uncovered free cell to the current position.
 
-        Returns:
+        Returns
+        -------
             Tuple[int]: The coordinates of the closest uncovered free cell.
         """
         x0, y0 = self._current_pos
@@ -328,14 +343,16 @@ class CoverageSolver():
     def find_most_distant(self, boundaries: List[int], direction: str) -> List[int]:
         """Finds the most distant unoccupied cell within the given boundaries in the specified direction.
 
-        Args:
+        Parameters
+        ----------
             boundaries (List[int]): The boundaries to search within.
             direction (str): The direction to search in.
 
         Raises:
             ValueError: If the `direction` parameter is not recognized.
 
-        Returns:
+        Returns
+        -------
             List[int]: The coordinates of the most distant cell.
         """
         xmin, ymin, xmax, ymax = boundaries
@@ -363,11 +380,13 @@ class CoverageSolver():
     def find_last_in_direction(self, boundaries: List[int], direction: str) -> List[int]:
         """Find the last cell (without obstacle) in the specified direction within the given boundaries.
 
-        Args:
+        Parameters
+        ----------
             boundaries (List[int]): The boundaries to search within.
             direction (str): The direction to search in.
 
-        Returns:
+        Returns
+        -------
             List[int]: The coordinates of the last cell in the specified direction.
         """
         xmin, ymin, xmax, ymax = boundaries
@@ -393,16 +412,18 @@ class CoverageSolver():
             last = [i, j]
         return last
 
-    def find_free_boundaries(self, boundaries: List[int], relaxed=False) -> Tuple[Union[int, List[int]]]:
+    def find_free_boundaries(self, boundaries: List[int], relaxed=False) -> Tuple[int, List[int]]:
         """Finds the free edges within the given boundaries.
 
-        Args:
+        Parameters
+        ----------
             boundaries (List[int]): The boundaries to search within.
             relaxed (bool, optional): Flag indicating whether to perform a relaxed search.
                 In relaxed mode, visited cells are considered free, otherwise visited and
                 cells containing obstacles are considered occupied. Defaults to False.
 
-        Returns:
+        Returns
+        -------
             Tuple[Union[int, List[int]]]: A tuple containing the number of free sides and the list of free cells.
         """
         free_count = 0
@@ -485,14 +506,16 @@ class CoverageSolver():
     def define_problem(self, boundaries: List[int], subgrid: np.ndarray, problem_type: str='complete', free_boundaries: List[Optional[List[int]]]=[], goal: List[Optional[List[int]]]=[]):
         """Defines the problem to be solved by the planner
 
-        Args:
+        Parameters
+        ----------
             boundaries (List[int]): The boundaries of the problem.
             subgrid (np.ndarray): The subgrid representing the problem area.
             problem_type (str, optional): The type of the problem; one of 'complete', 'partial'. Defaults to 'complete'.
             free_boundaries (List[Optional[List[int]]], optional): The list of free boundaries. Defaults to [].
             goal (List[Optional[List[int]]], optional): The goal cell(s) to be reached. Defaults to [].
 
-        Returns:
+        Returns
+        -------
             Problem: The defined problem
         """
         self._counter += 1
