@@ -4,7 +4,9 @@ import re
 import shutil
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union
-
+import tqdm
+from uuid import uuid4
+from tempfile import gettempdir
 import jinja2
 import numpy as np
 import unified_planning
@@ -32,16 +34,16 @@ def parse_cell(cell):
 
 class CoverageSolver():
 
-    def __init__(self, grid: List[List[float]], output_path: str, template_path: str, position: List[int] = [0, 0], direction: str = 'deast') -> None:
+    def __init__(self, grid: List[List[float]], position: List[int] = [0, 0], direction: str = 'deast', output_path: str = None, template_path: str = None) -> None:
         """Class representing a coverage solver.
 
         Parameters
         ----------
             grid (List[List[float]]): The grid representing the coverage area.
-            output_path (str): The path to the output directory.
-            template_path (str): The path to the Jinja template directory.
             position (List[int], optional): The starting position of the robot on the grid. Defaults to [0, 0].
             direction (str, optional): The initial direction of the robot. Must be one of ['deast', 'dwest', 'dsouth', 'dnorth']. Defaults to 'deast'.
+            output_path (str): The path to the output directory.
+            template_path (str): The path to the Jinja template directory.
 
         Raises
         ------
@@ -61,9 +63,20 @@ class CoverageSolver():
         self._counter = 0
         self._offsets = [0, 0, 0, 0] # [xwest, ynorth, xeast, ysouth]
         self._template_path = template_path
-        self._working_path = os.path.join(output_path, f"{datetime.now().strftime('%Y%m%d%H%M%S')}")
+        self._working_path = os.path.join(gettempdir(), 'cpp_solver', str(uuid4())) if output_path is None else os.path.join(output_path, f"{datetime.now().strftime('%Y%m%d%H%M%S')}")
         os.makedirs(self._working_path)
         shutil.copy2(os.path.join(template_path, 'domain.pddl'), os.path.join(self._working_path, 'domain.pddl'))
+
+    def run(self):
+        should_continue = True
+        size = self._grid.size
+        previous = 0
+        with tqdm(total=size - np.count_nonzero(self._grid)) as pbar:
+            while should_continue:
+                _, should_continue = self.proceed()
+                current = len(self._visited)
+                pbar.update(current - previous)
+                previous = current
 
     def info(self) -> Dict[str, Union[str, int]]:
         """
