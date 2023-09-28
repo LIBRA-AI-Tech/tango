@@ -1,0 +1,61 @@
+(define (problem coverage-problem)
+  (:domain coverage)
+  (:objects
+    {% for x in range(xmin, xmax) -%}
+      {%- for y in range(ymin, ymax) -%}
+        cell-{{x}}-{{y}}{{" "}}
+      {%- endfor -%}
+    {%- endfor -%}
+    - cell
+    dnorth deast dwest dsouth - direction
+  )
+  (:init
+    (at cell-{{current[0]}}-{{current[1]}})
+    (visited cell-{{current[0]}}-{{current[1]}})
+    (towards {{direction}})
+    (perpendicular dnorth dwest)
+    (perpendicular dnorth deast)
+    (perpendicular dsouth dwest)
+    (perpendicular dsouth deast)
+    (perpendicular dwest dnorth)
+    (perpendicular dwest dsouth)
+    (perpendicular deast dnorth)
+    (perpendicular deast dsouth)
+    {%- for x in range(xmin, xmax) %}
+      {%- for y in range(ymin, ymax) %}
+        {%- if x - 1 >= xmin %}
+          {%- if not grid[y][x] and not grid[y][x-1] %}
+    (west cell-{{x}}-{{y}} cell-{{x-1}}-{{y}} dwest)
+          {%- endif %}
+        {%- endif %}
+        {%- if x + 1 < xmax  %}
+          {%- if not grid[y][x] and not grid[y][x+1] %}
+    (east cell-{{x}}-{{y}} cell-{{x+1}}-{{y}} deast)
+          {%- endif %}
+        {%- endif %}
+        {%- if y - 1 >= ymin %}
+          {%- if not grid[y][x] and not grid[y-1][x] %}
+    (north cell-{{x}}-{{y}} cell-{{x}}-{{y-1}} dnorth)
+          {%- endif %}
+        {%- endif%}
+        {%- if y + 1 < ymax %}
+          {%- if not grid[y][x] and not grid[y+1][x] %}
+    (south cell-{{x}}-{{y}} cell-{{x}}-{{y+1}} dsouth)
+          {%- endif %}
+        {%- endif %}
+      {%- endfor %}
+    {%- endfor %}
+  )
+  (:goal
+    (and
+      (visited cell-{{goal[0]}}-{{goal[1]}})
+    {%- if len(free_boundaries) > 0 %}
+      (or 
+        {%- for point in free_boundaries %}
+        (at cell-{{point[0]}}-{{point[1]}})
+        {%- endfor %}
+      )
+    {%- endif %}
+    )
+  )
+)
