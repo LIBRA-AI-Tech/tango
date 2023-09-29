@@ -61,7 +61,7 @@ class Parser:
     This class is used for parsing and processing maps.
     """
     
-    def __init__(self, hard_map: str, soft_map: str, robot_config: str, cell_dim: Optional[int] = None, occupied_cell_threshold: float = 0.5, use_disc: bool = False) -> None:
+    def __init__(self, hard_map: str, soft_map: str, robot_config: str, cell_dim: Optional[int] = None, occupied_cell_threshold: float = 0.7, use_disc: bool = False) -> None:
         """
         The initializer for the Parser class.
 
@@ -165,6 +165,11 @@ class Parser:
         arr = ((1 - arr)*255).astype(np.uint8) if reverse else (arr*255).astype(np.uint8)
         im = Image.fromarray(arr)
         return im
+
+    def _reverse_polygon(self, polygon):
+        maxy, _ = self._grid.shape
+        reversed = np.array([[c[0], max(0, maxy - c[1])] for c in polygon])
+        return reversed
     
     def select(self, polygon: Union[np.ndarray, list]) -> None:
         """
@@ -189,14 +194,14 @@ class Parser:
             ])
             return selected_grid
 
-        if isinstance(polygon, list):
-            polygon = np.array(polygon)
+        polygon = self._reverse_polygon(polygon)
 
         self._selected_grid = select_grid(self._grid, polygon)
         self._selected_grid_dilated = select_grid(self._grid_dilated, polygon)
         self._selected_grid_eroded = select_grid(self._grid_eroded, polygon) 
         self._selection = True
         self._polygon = polygon
+        self.downscale_grid()
 
     def dilate(self) -> np.ndarray:
         """
