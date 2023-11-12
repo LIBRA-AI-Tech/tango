@@ -4,12 +4,13 @@ import re
 import shutil
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union
-import tqdm
+from tqdm import tqdm
 from uuid import uuid4
 from tempfile import gettempdir
 import jinja2
 import numpy as np
 import unified_planning
+import cpp_solver
 from cpp_solver.utilities import get_unreachable_points, patch_array
 from scipy.spatial import KDTree
 from unified_planning.engines import PlanGenerationResultStatus
@@ -43,7 +44,7 @@ def parse_cell(cell) -> Tuple[int]:
     y = int(m.group('y'))
     return (x, y)
 
-class CoverageSolver():
+class Solver():
 
     def __init__(self, grid: List[List[float]], position: List[int] = [0, 0], direction: str = 'deast', output_path: str = None, template_path: str = None) -> None:
         """Class representing a coverage solver.
@@ -73,10 +74,11 @@ class CoverageSolver():
         self._turns = 0
         self._counter = 0
         self._offsets = [0, 0, 0, 0] # [xwest, ynorth, xeast, ysouth]
-        self._template_path = template_path
+        package_path = os.path.split(os.path.abspath(cpp_solver.__file__))[0]
+        self._template_path = template_path if template_path is not None else os.path.join(package_path, 'templates')
         self._working_path = os.path.join(gettempdir(), 'cpp_solver', str(uuid4())) if output_path is None else os.path.join(output_path, f"{datetime.now().strftime('%Y%m%d%H%M%S')}")
-        os.makedirs(self._working_path)
-        shutil.copy2(os.path.join(template_path, 'domain.pddl'), os.path.join(self._working_path, 'domain.pddl'))
+        os.makedirs(self._working_path, exist_ok=True)
+        shutil.copy2(os.path.join(self._template_path, 'domain.pddl'), os.path.join(self._working_path, 'domain.pddl'))
 
     def run(self):
         should_continue = True
@@ -544,10 +546,9 @@ class CoverageSolver():
         """
         self._counter += 1
         xmin, ymin, xmax, ymax = boundaries
-        template_path = os.path.join(self._template_path, problem_type)
-        loader = jinja2.FileSystemLoader(searchpath=template_path)
+        loader = jinja2.FileSystemLoader(searchpath=self._template_path)
         environment = jinja2.Environment(loader=loader, keep_trailing_newline=True)
-        template = environment.get_template('problem.j2')
+        template = environment.get_template(f'problem_{problem_type}_coverage.j2')
         content = template.render(
             xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
             current=self._current_pos,
