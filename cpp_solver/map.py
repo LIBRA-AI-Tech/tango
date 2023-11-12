@@ -8,7 +8,6 @@ import pygeos as pg
 import yaml
 from PIL import Image, ImageOps
 
-
 @dataclass
 class ImageDefs:
     """
@@ -166,12 +165,41 @@ class Parser:
         im = Image.fromarray(arr)
         return im
 
-    def _reverse_polygon(self, polygon):
+    def pixel_to_meter(self, coordinates: Tuple[int]) -> Tuple[float]:
+        """Converts a pair of coordinates from pixel to meters
+
+        Args:
+            coordinates (Tuple[int]): Pair of x, y coordinates
+
+        Returns:
+            Tuple[float]: C
+        """
+        resolution = self._obs_defs.resolution
+        x0, y0, _ = self._obs_defs.origin
+        x, y = coordinates
+        return (x*resolution + x0, y*resolution + y0)
+
+    def meter_to_pixel(self, coordinates: Tuple[float]) -> Tuple[int]:
+        resolution = self._obs_defs.resolution
+        x0, y0, _ = self._obs_defs.origin
+        x, y = coordinates
+        return (round((x - x0) / resolution), round((y - y0) / resolution))
+
+    def _reverse_polygon(self, polygon: Union[np.ndarray, list]) -> np.ndarray:
+        """Reverse y coordinates of a polygon so that axis origin is upper left
+
+        Args:
+            polygon Union[np.ndarray, list]
+                Coordinates of a polygon
+
+        Returns:
+            np.ndarray: The reverted polygon
+        """
         maxy, _ = self._grid.shape
         reversed = np.array([[c[0], max(0, maxy - c[1])] for c in polygon])
         return reversed
     
-    def select(self, polygon: Union[np.ndarray, list]) -> None:
+    def select(self, polygon: Union[np.ndarray, list], unit: str = 'meter') -> None:
         """
         Selects a region of the grid defined by a polygon. 
 
@@ -193,6 +221,12 @@ class Parser:
                 ] for j in range(0, selected_grid.shape[0])
             ])
             return selected_grid
+
+        if unit not in ['meter', 'pixel']:
+            raise ValueError("`unit` should be one of 'meter', 'pixel'")
+
+        if unit == 'meter':
+            polygon = np.array([self.meter_to_pixel(coordinates) for coordinates in polygon])
 
         polygon = self._reverse_polygon(polygon)
 
