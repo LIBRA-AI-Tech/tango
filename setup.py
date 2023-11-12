@@ -8,7 +8,7 @@ setuptools.setup(
     description='A complete Coverage Path Planning solver based on AIPlan4EU Unified Planning library.',
     packages=setuptools.find_packages(),
     install_requires=[
-        "unified-planning[enhsp-opt]>=1.0.0,<1.1.0",
+        "unified-planning[engines]>=1.0.0,<1.1.0",
         "jinja2>=3.1.2,<3.2.0",
         "Pillow>=9.5.0,<9.6.0",
         "pygeos>=0.14,<0.15",

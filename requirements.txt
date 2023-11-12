@@ -1,4 +1,4 @@
-unified-planning[enhsp-opt]==1.0.0
+unified-planning[engines]==1.0.0
 jinja2==3.1.2
 Pillow==9.5.0
 pygeos==0.14
