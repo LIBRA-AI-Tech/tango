@@ -4,7 +4,7 @@ import setuptools
 
 setuptools.setup(
     name='cpp_solver',
-    version='0.0.1',
+    version='1.0.0  ',
     description='A complete Coverage Path Planning solver based on AIPlan4EU Unified Planning library.',
     packages=setuptools.find_packages(),
     install_requires=[
