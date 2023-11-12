@@ -3,3 +3,6 @@ __pycache__/
 build/
 .env
 .pytest_cache
+*docker*
+Dockerfile
+notebooks/
