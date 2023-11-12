@@ -18,6 +18,8 @@ The main components of the project are spread across several Python files:
 
 - `plot_utils.py`: This module is used for visualization purposes. It provides functions to plot the environment map, the planned path for the AGV, and the actual path taken, which can be useful for debugging and understanding the AGV's movements.
 
+- `coverage_planner`: Wrapper class for [ROS](https://ros.org) integration.
+
 ## Installation
 
 Tango is designed as a Python package, ensuring easy installation alongside its required dependencies.
@@ -25,8 +27,35 @@ Tango is designed as a Python package, ensuring easy installation alongside its 
 To install the package, use a package manager like pip:
 
 ```bash
-pip install cpp_solver
+pip install git+https://github.com/LIBRA-AI-Tech/tango
 ```
+
+## Run
+
+For [ROS](https://ros.org) integration, one cas use the wrapper class `CoveragePlanner`:
+
+```python
+from cpp_solver import CoveragePlanner
+```
+
+and initialize the class as follows:
+```python
+planner = CoveragePlanner(main_yaml_file_path, obstacles_yaml_file_path, robot_dimensions_yaml_file_path)
+```
+
+Here, `main_yaml_file_path` and `obstacles_yaml_file_path` refer to the paths of the map definitions for the main map and the obstacle map, respectively.
+Refer to the [ROS documentation](http://wiki.ros.org/map_server) for structuring them. `robot_dimensions_yaml_file_path` is the path to a YAML file containing information about the robot's dimension characteristics; it should contain the following:
+
+- **robot_dim**: The robot's maximum dimension.
+- **mower_dim**: The robot's (effective) mowing radius.
+
+Obtain the path by:
+```python
+path = planner.run(polygon)
+```
+where `polygon` is a polygon contained in the map; a list of x, y coordinates in meters.
+
+If you prefer not to use ROS integration, you can utilize the [Solver](./cpp_solver/solver.py) to obtain paths.
 
 ## License
 
